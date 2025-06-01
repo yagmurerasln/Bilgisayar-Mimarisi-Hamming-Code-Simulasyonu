@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hamming SEC Simülatörü</title>
+  <style>
+    :root {
+      --primary-bg: #121212;
+      --secondary-bg: #1e1e2e;
+      --card-bg: #252537;
+      --text-color: #e0e0ff;
+      --parity-color: #4caf50;
+      --error-color: #f44336;
+      --syndrome-color: #2196f3;
+      --button-bg: #3a3a5a;
+      --button-hover: #4d4d7a;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: url('arkaplan1.png') no-repeat center center fixed;
+      background-size: cover;
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    .container {
+      max-width: 900px;
+      width: 100%;
+      background: rgba(30, 30, 46, 0.8);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      margin-top: 20px;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #b2b6e9;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(178, 182, 233, 0.5);
+    }
+    
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #b2b6e9;
+    }
+    
+    select, input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #2a2a3a;
+      color: var(--text-color);
+      font-size: 1rem;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #646cff;
+      box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.3);
+    }
+    
+    button {
+      background: var(--button-bg);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin-top: 10px;
+    }
+    
+    button:hover {
+      background: var(--button-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .button-group button {
+      flex: 1;
+    }
+    
+    .bit-display {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+    
+    .bit {
+      background: #3a3a5a;
+      color: white;
+      font-family: monospace;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .bit::before {
+      content: attr(data-pos);
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      font-size: 0.6rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .parity {
+      background-color: var(--parity-color);
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+    }
+    
+    .error {
+      background-color: var(--error-color);
+      animation: pulse 1.5s infinite;
+      box-shadow: 0 0 12px rgba(244, 67, 54, 0.7);
+    }
+    
+    .syndrome {
+      border: 2px solid var(--syndrome-color);
+      box-shadow: 0 0 12px rgba(33, 150, 243, 0.7);
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .result-section {
+      display: none;
+    }
+    
+    #hammingCodeDisplay {
+      min-height: 60px;
+    }
+    
+    .info-box {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      border-left: 4px solid #646cff;
+    }
+    
+    .explanation {
+      margin-top: 30px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      border-radius: 10px;
+    }
+    
+    .explanation h3 {
+      color: #b2b6e9;
+      margin-top: 0;
+    }
+    
+    .error-message {
+      color: #ff4d4f !important;
+      font-weight: bold;
+      background: none !important;
+      border-left: 4px solid #ff4d4f !important;
+    }
+    
+    #syndromeResult.error-message {
+      color: #ff4d4f !important;
+      font-weight: bold;
+      background: none !important;
+      border-left: 4px solid #ff4d4f !important;
+    }
+    
+    #errorNote.error-message,
+    #inputNote.error-message {
+      color: #ff4d4f !important;
+      font-weight: bold;
+      background: none !important;
+      border-left: 4px solid #ff4d4f !important;
+    }
+    
+    @media (max-width: 768px) {
+      .button-group {
+        flex-direction: column;
+      }
+      
+      .bit {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hamming SEC-DED Simülatörü</h1>
+    
+    <div class="card">
+      <form id="hammingForm">
+        <div class="form-group">
+          <label for="bitLength">Veri Uzunluğu:</label>
+          <select id="bitLength">
+            <option value="8">8 bit</option>
+            <option value="16">16 bit</option>
+            <option value="32">32 bit</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="dataInput">Veri (sadece 0 ve 1):</label>
+          <input type="text" id="dataInput" maxlength="32" required>
+        </div>
+        
+        <div class="info-box" id="inputNote">
+          <strong>Not:</strong> Veri girişi seçilen uzunlukta olmalıdır (8, 16 veya 32 bit). 
+          Sadece 0 ve 1 karakterlerini kullanın.
+        </div>
+        
+        <button type="submit">Hamming Kodunu Hesapla</button>
+      </form>
+    </div>
+    
+    <div id="resultSection" class="card result-section">
+      <h2>Sonuçlar</h2>
+      
+      <div class="info-box">
+        <p><strong>Parite Bitleri:</strong> <span id="parityBits"></span></p>
+        <p><strong>Parite Pozisyonları:</strong> <span id="parityPositions"></span></p>
+        <p><strong>Genel Parite Bit:</strong> <span id="overallParity"></span></p>
+      </div>
+      
+      <div>
+        <p><strong>Hamming Kodu:</strong></p>
+        <div id="hammingCodeDisplay" class="bit-display"></div>
+      </div>
+      
+      <div class="form-group">
+        <label for="errorPosition">Hatalı bit pozisyonu gir (1’den başlayarak):</label>
+        <input type="number" id="errorPosition" min="1">
+      </div>
+      
+      <div class="button-group">
+        <button onclick="introduceError()">Hata Oluştur</button>
+        <button onclick="detectError()">Hata Tespit Et</button>
+        <button onclick="correctError()">Hatalı Biti Düzelt</button>
+      </div>
+      
+      <div id="syndromeResult" class="info-box"></div>
+    </div>
+    
+    <div class="explanation">
+      <h3>Hamming SEC Kodu Hakkında</h3>
+      <p>Hamming SEC (Single Error Correction) kodu, veri iletiminde oluşan hataları tespit etmek ve düzeltmek için kullanılan bir hata düzeltme kodudur.</p>
+      <p><strong>Özellikleri:</strong></p>
+      <ul>
+        <li>Tek bitlik hataları otomatik olarak düzeltebilir</li>
+        <li>Çift bitlik hataları tespit edebilir (ancak düzeltemez)</li>
+        <li>Parite bitleri ekleyerek çalışır</li>
+        <li>Veri bütünlüğünü sağlamada etkilidir</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // Parite bit sayısını hesaplama
+    function calculateParityBitsLength(dataLen) {
+      let r = 1;
+      while (Math.pow(2, r) < dataLen + r + 1) {
+        r++;
+      }
+      return r;
+    }
+
+    function encodeHamming(dataBits) {
+      // 2.1. Başlangıç: data dizisi, m, r, n
+      const data = dataBits.split('').map(ch => parseInt(ch));
+      const m = data.length;
+      const r = calculateParityBitsLength(m);
+      const n = m + r; // n = m + r
+
+      // 2.2. “1-based” index için n+1 uzunluğunda dizi (code[0] kullanılmayacak)
+      let code = new Array(n + 1).fill(0);
+      let dataIndex = 0;
+
+      // 2.3. Veri bitlerini yerleştir (i = 1..n arasında, 2^k pozisyonlarını ATLA)
+      // DİKKAT: MSB en sağda olacak şekilde veri bitlerini tersten yerleştiriyoruz
+      for (let i = 1; i <= n; i++) {
+        if ((i & (i - 1)) !== 0) {
+          // dataBits'in MSB'si en sağda olacak şekilde
+          code[i] = data[data.length - dataIndex - 1];
+          dataIndex++;
+        }
+      }
+
+      // 2.4. Parite bitlerini hesapla
+      let parityPositions = [];
+      for (let i = 0; i < r; i++) {
+        const parityIndex = 1 << i;
+        parityPositions.push(parityIndex);
+
+        let parityValue = 0;
+        for (let j = 1; j <= n; j++) {
+          if ((j & parityIndex) !== 0) {
+            parityValue ^= code[j];
+          }
+        }
+        code[parityIndex] = parityValue;
+      }
+
+      // 2.5. Genel parite YOK, bu adımı kaldırıyoruz
+
+      // 2.6. Döndür: code[1..n], parity bitleri ve pozisyonları
+      const codeStrArray = code.slice(1, n + 1).map(bit => bit.toString());
+      const parityBitsStr = parityPositions.map(pos => code[pos].toString());
+      return {
+        code: codeStrArray,
+        parityBits: parityBitsStr,
+        parityPositions: parityPositions
+      };
+    }
+
+    // Form submit işlemi
+    document.getElementById("hammingForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const bitLen = parseInt(document.getElementById("bitLength").value);
+      const dataInput = document.getElementById("dataInput").value.trim();
+      const syndromeBox = document.getElementById("syndromeResult");
+      const inputNote = document.getElementById("inputNote");
+
+      // 3.1. Uzunluk ve sadece “0/1” kontrolü
+      if (dataInput.length !== bitLen || !/^[01]+$/.test(dataInput)) {
+        syndromeBox.innerText = `Lütfen ${bitLen} uzunluğunda, yalnızca 0 ve 1 karakterleri içeren veri girin.`;
+        syndromeBox.classList.add("error-message");
+        inputNote.classList.add("error-message");
+        return;
+      }
+      syndromeBox.classList.remove("error-message");
+      inputNote.classList.remove("error-message");
+
+      const result = encodeHamming(dataInput);
+
+      // 3.3. Sonuç bölümünü göster, parite bitlerini ve pozisyonlarını yaz
+      document.getElementById("resultSection").style.display = "block";
+      document.getElementById("parityBits").innerText = result.parityBits.join(", ");
+      document.getElementById("parityPositions").innerText = result.parityPositions.join(", ");
+      // Genel pariteyi kaldır
+      document.getElementById("overallParity").innerText = "";
+
+      // 3.4. Hamming kodunu “kutucuk” olarak ekrana bas (soldan → sağa 1..n)
+      const display = document.getElementById("hammingCodeDisplay");
+      display.innerHTML = "";
+      const codeArr = result.code;    // length = n (m + r)
+      // DİKKAT: MSB en sağda olacak şekilde kutuları sağdan sola yerleştiriyoruz
+      for (let i = 0; i < codeArr.length; i++) {
+        const span = document.createElement("span");
+        span.className = "bit";
+        // Sağdan sola: codeArr[codeArr.length - 1 - i]
+        span.innerText = codeArr[codeArr.length - 1 - i];
+        span.dataset.pos = (codeArr.length - i).toString();
+        // Parite pozisyonu kontrolü de sağdan sola
+        if (result.parityPositions.includes(codeArr.length - i)) {
+          span.classList.add("parity");
+        }
+        display.appendChild(span);
+      }
+
+      // 3.5. Daha önceki hata/işaretlemeleri ve mesajları temizle
+      syndromeBox.innerText = "";
+      document.getElementById("errorPosition").value = "";
+      for (let i = 0; i < codeArr.length; i++) {
+        display.children[i].classList.remove("error", "syndrome");
+      }
+    });
+
+    // ------------------------------------------------------------
+    // 4) introduceError(): “soldan” sayılan pozisyonu alıp toggle yapar
+    function introduceError() {
+      const posInput = document.getElementById("errorPosition").value.trim();
+      const display = document.getElementById("hammingCodeDisplay");
+      const n = display.children.length;
+      const syndromeBox = document.getElementById("syndromeResult");
+
+      if (posInput === "") {
+        syndromeBox.innerText = "Lütfen bir pozisyon girin!";
+        syndromeBox.classList.add("error-message");
+        return;
+      }
+
+      const pos = parseInt(posInput, 10);
+
+      if (isNaN(pos) || pos < 1 || pos > n) {
+        syndromeBox.innerText = `Geçerli bir pozisyon girin (1 - ${n} arası).`;
+        syndromeBox.classList.add("error-message");
+        return;
+      }
+
+      // 4.1. Tüm “error” / “syndrome” sınıflarını temizle, mesajı sıfırla
+      for (let i = 0; i < n; i++) {
+        display.children[i].classList.remove("error", "syndrome");
+      }
+      syndromeBox.innerText = "";
+
+      // 4.2. Mevcut bitleri oku (sağdan sola)
+      let bits = [];
+      for (let i = 0; i < n; i++) {
+        bits.push(display.children[i].innerText);
+      }
+      // 4.3. Pozisyon = sağdan sola (kullanıcı 1 dediğinde en sağdaki kutu)
+      const idx = n - pos;
+      bits[idx] = bits[idx] === "0" ? "1" : "0"; // toggle
+
+      // 4.4. Güncel bit dizisini ekrana geri yaz ve `.error` ekle
+      for (let i = 0; i < n; i++) {
+        display.children[i].innerText = bits[i];
+      }
+      display.children[idx].classList.add("error");
+      syndromeBox.innerText = `${pos}. pozisyonda hata oluşturuldu.`;
+      syndromeBox.classList.remove("error-message");
+    }
+
+    // ------------------------------------------------------------
+    // 5) detectError(): Hem parity sendromlarını hem overall parity’yi kontrol eder
+    function detectError() {
+      const display = document.getElementById("hammingCodeDisplay");
+      const n = display.children.length;
+      let bits = [];
+      // 5.1. Kutuları sağdan sola oku
+      for (let i = 0; i < n; i++) {
+        bits.push(display.children[i].innerText);
+        display.children[i].classList.remove("syndrome");
+      }
+      // bits dizisini ters çevir (soldan sağa indexler için)
+      bits = bits.reverse();
+      const dataLen = parseInt(document.getElementById("bitLength").value);
+      const r = calculateParityBitsLength(dataLen);
+      const expectedN = dataLen + r;
+      if (expectedN !== n) {
+        document.getElementById("syndromeResult").innerText = "Beklenmeyen uzunluk! Lütfen yeniden hesaplayın.";
+        return;
+      }
+
+      let syndrome = 0;
+      for (let i = 0; i < r; i++) {
+        const parityIndex = 1 << i;
+        let parityValue = 0;
+        for (let j = 1; j <= n; j++) {
+          if ((j & parityIndex) !== 0) {
+            parityValue ^= parseInt(bits[j - 1]);
+          }
+        }
+        if (parityValue !== 0) {
+          syndrome += parityIndex;
+        }
+      }
+
+      // Genel parite YOK, sadece syndrome ile kontrol
+      let resultText = "";
+      if (syndrome === 0) {
+        resultText = "Hata yok.";
+      } else if (syndrome >= 1 && syndrome <= n) {
+        // Sağdan sola: kutu indexi = n - syndrome
+        display.children[n - syndrome].classList.add("syndrome");
+        resultText = `Tek bit hatası tespit edildi (pozisyon ${syndrome}).`;
+      } else {
+        resultText = "Bilinmeyen hata durumu.";
+      }
+      document.getElementById("syndromeResult").innerText = resultText;
+    }
+
+    // ------------------------------------------------------------
+    // 6) correctError(): detectError() sonucu sendrom’a göre düzeltme yapar
+    function correctError() {
+      const display = document.getElementById("hammingCodeDisplay");
+      const n = display.children.length;
+      let bits = [];
+      // 6.1. Kutuları sağdan sola oku
+      for (let i = 0; i < n; i++) {
+        bits.push(display.children[i].innerText);
+        display.children[i].classList.remove("syndrome");
+      }
+      // bits dizisini ters çevir (soldan sağa indexler için)
+      bits = bits.reverse();
+      const dataLen = parseInt(document.getElementById("bitLength").value);
+      const r = calculateParityBitsLength(dataLen);
+      const expectedN = dataLen + r;
+      if (expectedN !== n) {
+        document.getElementById("syndromeResult").innerText = "Beklenmeyen uzunluk! Önce kodu yeniden hesaplayın.";
+        return;
+      }
+
+      let syndrome = 0;
+      for (let i = 0; i < r; i++) {
+        const parityIndex = 1 << i;
+        let parityValue = 0;
+        for (let j = 1; j <= n; j++) {
+          if ((j & parityIndex) !== 0) {
+            parityValue ^= parseInt(bits[j - 1]);
+          }
+        }
+        if (parityValue !== 0) {
+          syndrome |= parityIndex;
+        }
+      }
+
+      let resultText = "";
+      if (syndrome === 0) {
+        resultText = "Düzeltilecek hata yok.";
+      } else if (syndrome >= 1 && syndrome <= n) {
+        const idx = syndrome - 1;
+        bits[idx] = bits[idx] === "0" ? "1" : "0";
+        resultText = `Tek bit hatası düzeltildi (pozisyon ${syndrome}).`;
+      } else {
+        resultText = "Bilinmeyen hata durumu.";
+      }
+      // bits'i tekrar sağdan sola çevirip ekrana yaz
+      bits = bits.reverse();
+      for (let i = 0; i < n; i++) {
+        display.children[i].innerText = bits[i];
+      }
+      // Hatalı/düzeltilen kutuyu işaretle
+      if (syndrome >= 1 && syndrome <= n) {
+        display.children[n - syndrome].classList.add("syndrome");
+      }
+      document.getElementById("syndromeResult").innerText = resultText;
+    }
+  </script>
+</body>
+</html>
