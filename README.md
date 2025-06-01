@@ -16,18 +16,18 @@ Bu uygulamada, Hamming SEC (Single Error Correction) algoritması görsel ve etk
 
 ## 👓 Simülasyon Görüntüleri
 ### 📌Açıklama
-(aciklama.png)<br>
+![Açıklama](aciklama.png)<br>
 ### 📌Simülasyon Ekranı
-(1.png)<br>
+![Görünüm](1.png)<br>
 ### 📌Hatalı Giriş
-(hata.png)<br>
+![Hatalı Giriş](hata.png)<br>
 ### 📌Veriyi Alma
-(2.png)<br>
+![Veriyi Alma](2.png)<br>
 ### 📌Hata Oluşturma
-(3.png)<br>
+![Hata Oluşturma](3.png)<br>
 ### 📌Hatayı Tespit Etme 
-(4.png)<br>
+![Hatayı Tespit Etme](4.png)<br>
 ### 📌Hatayı Düzeltme
-(5.png)<br><br>
+![Hatayı Düzeltme](5.png)<br><br>
 
 ## 🎥 Demo Videosu
