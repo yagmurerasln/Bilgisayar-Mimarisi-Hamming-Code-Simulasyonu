@@ -81,6 +81,7 @@
       background: #2a2a3a;
       color: var(--text-color);
       font-size: 1rem;
+      box-sizing: border-box;
     }
     
     input:focus, select:focus {
@@ -244,7 +245,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Hamming SEC-DED Simülatörü</h1>
+    <h1>Hamming SEC Simülatörü</h1>
     
     <div class="card">
       <form id="hammingForm">
@@ -258,13 +259,12 @@
         </div>
         
         <div class="form-group">
-          <label for="dataInput">Veri (sadece 0 ve 1):</label>
-          <input type="text" id="dataInput" maxlength="32" required>
+          <label for="dataInput">Veri:</label>
+          <input type="text" id="dataInput" maxlength="8" required>
         </div>
         
         <div class="info-box" id="inputNote">
-          <strong>Not:</strong> Veri girişi seçilen uzunlukta olmalıdır (8, 16 veya 32 bit). 
-          Sadece 0 ve 1 karakterlerini kullanın.
+          <strong>Not:</strong> Veri girişi seçilen uzunlukta olmalıdır (<span id="currentLength">8</span> bit). 
         </div>
         
         <button type="submit">Hamming Kodunu Hesapla</button>
@@ -286,7 +286,7 @@
       </div>
       
       <div class="form-group">
-        <label for="errorPosition">Hatalı bit pozisyonu gir (1’den başlayarak):</label>
+        <label for="errorPosition">Hatalı bit pozisyonu gir (1'den başlayarak):</label>
         <input type="number" id="errorPosition" min="1">
       </div>
       
@@ -329,7 +329,7 @@
       const r = calculateParityBitsLength(m);
       const n = m + r; // n = m + r
 
-      // 2.2. “1-based” index için n+1 uzunluğunda dizi (code[0] kullanılmayacak)
+      // 2.2. "1-based" index için n+1 uzunluğunda dizi (code[0] kullanılmayacak)
       let code = new Array(n + 1).fill(0);
       let dataIndex = 0;
 
@@ -370,16 +370,68 @@
       };
     }
 
+    // Bit uzunluğu değiştiğinde çağrılacak fonksiyon
+    function updateMaxLength() {
+      const bitLength = parseInt(document.getElementById("bitLength").value);
+      const dataInput = document.getElementById("dataInput");
+      const currentLengthSpan = document.getElementById("currentLength");
+      
+      // Input'un maxlength özelliğini güncelle
+      dataInput.setAttribute("maxlength", bitLength);
+      
+      // Mevcut değeri kontrol et ve gerekirse kes
+      if (dataInput.value.length > bitLength) {
+        dataInput.value = dataInput.value.substring(0, bitLength);
+      }
+      
+      // Bilgi metnini güncelle
+      currentLengthSpan.textContent = bitLength;
+      
+      // Placeholder'ı güncelle
+      dataInput.placeholder = `${bitLength} bit veri girin (örn: ${'0'.repeat(bitLength)})`;
+      
+      // Sonuç bölümünü gizle
+      document.getElementById("resultSection").style.display = "none";
+      
+      // Hata mesajlarını temizle
+      document.getElementById("syndromeResult").innerText = "";
+      document.getElementById("syndromeResult").classList.remove("error-message");
+      document.getElementById("inputNote").classList.remove("error-message");
+    }
+
+    // Sayfa yüklendiğinde ve bit uzunluğu değiştiğinde çalıştır
+    document.getElementById("bitLength").addEventListener("change", updateMaxLength);
+    
+    // Sayfa ilk yüklendiğinde çalıştır
+    document.addEventListener("DOMContentLoaded", updateMaxLength);
+
+    // Input'a sadece 0 ve 1 girilmesini sağla
+    document.getElementById("dataInput").addEventListener("input", function(e) {
+      // Sadece 0 ve 1 karakterlerini kabul et
+      this.value = this.value.replace(/[^01]/g, '');
+      
+      // Maksimum uzunluğu kontrol et
+      const maxLength = parseInt(this.getAttribute("maxlength"));
+      if (this.value.length > maxLength) {
+        this.value = this.value.substring(0, maxLength);
+      }
+    });
+
     // Form submit işlemi
     document.getElementById("hammingForm").addEventListener("submit", function (e) {
       e.preventDefault();
+
+      // Her hesaplamadan önce kutuları ve sonucu temizle
+      document.getElementById("hammingCodeDisplay").innerHTML = "";
+      document.getElementById("syndromeResult").innerText = "";
+      document.getElementById("syndromeResult").classList.remove("error-message");
 
       const bitLen = parseInt(document.getElementById("bitLength").value);
       const dataInput = document.getElementById("dataInput").value.trim();
       const syndromeBox = document.getElementById("syndromeResult");
       const inputNote = document.getElementById("inputNote");
 
-      // 3.1. Uzunluk ve sadece “0/1” kontrolü
+      // 3.1. Uzunluk ve sadece "0/1" kontrolü
       if (dataInput.length !== bitLen || !/^[01]+$/.test(dataInput)) {
         syndromeBox.innerText = `Lütfen ${bitLen} uzunluğunda, yalnızca 0 ve 1 karakterleri içeren veri girin.`;
         syndromeBox.classList.add("error-message");
@@ -398,7 +450,7 @@
       // Genel pariteyi kaldır
       document.getElementById("overallParity").innerText = "";
 
-      // 3.4. Hamming kodunu “kutucuk” olarak ekrana bas (soldan → sağa 1..n)
+      // 3.4. Hamming kodunu "kutucuk" olarak ekrana bas (soldan → sağa 1..n)
       const display = document.getElementById("hammingCodeDisplay");
       display.innerHTML = "";
       const codeArr = result.code;    // length = n (m + r)
@@ -425,7 +477,7 @@
     });
 
     // ------------------------------------------------------------
-    // 4) introduceError(): “soldan” sayılan pozisyonu alıp toggle yapar
+    // 4) introduceError(): "soldan" sayılan pozisyonu alıp toggle yapar
     function introduceError() {
       const posInput = document.getElementById("errorPosition").value.trim();
       const display = document.getElementById("hammingCodeDisplay");
@@ -446,7 +498,7 @@
         return;
       }
 
-      // 4.1. Tüm “error” / “syndrome” sınıflarını temizle, mesajı sıfırla
+      // 4.1. Tüm "error" / "syndrome" sınıflarını temizle, mesajı sıfırla
       for (let i = 0; i < n; i++) {
         display.children[i].classList.remove("error", "syndrome");
       }
@@ -471,7 +523,7 @@
     }
 
     // ------------------------------------------------------------
-    // 5) detectError(): Hem parity sendromlarını hem overall parity’yi kontrol eder
+    // 5) detectError(): Hem parity sendromlarını hem overall parity'yi kontrol eder
     function detectError() {
       const display = document.getElementById("hammingCodeDisplay");
       const n = display.children.length;
@@ -520,7 +572,7 @@
     }
 
     // ------------------------------------------------------------
-    // 6) correctError(): detectError() sonucu sendrom’a göre düzeltme yapar
+    // 6) correctError(): detectError() sonucu sendrom'a göre düzeltme yapar
     function correctError() {
       const display = document.getElementById("hammingCodeDisplay");
       const n = display.children.length;
